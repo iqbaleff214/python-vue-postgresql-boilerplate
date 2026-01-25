@@ -1,0 +1,53 @@
+# Backend-specific gitignore for PIXO Baby Growth Platform
+
+# Environment variables - CRITICAL
+.env
+.env.*
+!.env.example
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+log/
+
+# Python cache
+*/__pycache__/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Uploaded files during development
+uploads/
+media/
+static/uploads/
+
+# AI model files
+models/
+*.pkl
+*.h5
+*.pb
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
