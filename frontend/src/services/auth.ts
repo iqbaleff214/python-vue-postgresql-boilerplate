@@ -32,6 +32,11 @@ export interface UpdateProfilePayload {
   phone_number?: string
 }
 
+export interface ChangePasswordPayload {
+  current_password: string
+  new_password: string
+}
+
 interface TokenResponse {
   access_token: string
   token_type: string
@@ -65,6 +70,10 @@ export const authService = {
       headers: { "Content-Type": "multipart/form-data" },
     })
     return data
+  },
+
+  async changePassword(payload: ChangePasswordPayload): Promise<void> {
+    await api.put("/users/me/password", payload)
   },
 
   async logout(): Promise<void> {

@@ -24,3 +24,8 @@ class UserUpdateRequest(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=255)
     surname: str | None = None
     phone_number: str | None = Field(None, min_length=5, max_length=50)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=6)

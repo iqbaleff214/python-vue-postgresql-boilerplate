@@ -7,8 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.dependencies import get_current_user, get_db
+from app.core.security import hash_password, verify_password
 from app.models.user import User
-from app.users.schemas import UserResponse, UserUpdateRequest
+from app.users.schemas import ChangePasswordRequest, UserResponse, UserUpdateRequest
 
 router = APIRouter()
 
@@ -85,3 +86,20 @@ async def upload_avatar(
     await db.commit()
     await db.refresh(current_user)
     return current_user
+
+
+@router.put("/me/password")
+async def change_password(
+    data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if not verify_password(data.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
+
+    current_user.password_hash = hash_password(data.new_password)
+    await db.commit()
+    return {"detail": "Password changed successfully"}
