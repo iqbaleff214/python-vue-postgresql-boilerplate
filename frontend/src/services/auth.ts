@@ -26,6 +26,12 @@ export interface RegisterPayload {
   password: string
 }
 
+export interface UpdateProfilePayload {
+  name?: string
+  surname?: string | null
+  phone_number?: string
+}
+
 interface TokenResponse {
   access_token: string
   token_type: string
@@ -44,6 +50,20 @@ export const authService = {
 
   async getMe(): Promise<User> {
     const { data } = await api.get<User>("/users/me")
+    return data
+  },
+
+  async updateProfile(payload: UpdateProfilePayload): Promise<User> {
+    const { data } = await api.put<User>("/users/me", payload)
+    return data
+  },
+
+  async uploadAvatar(file: File): Promise<User> {
+    const formData = new FormData()
+    formData.append("file", file)
+    const { data } = await api.post<User>("/users/me/avatar", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
     return data
   },
 

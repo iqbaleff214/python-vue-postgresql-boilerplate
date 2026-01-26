@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     secret_key: str = "your-super-secret-jwt-key-change-this-in-production"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
+    upload_dir: str = "uploads"
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

@@ -4,6 +4,7 @@ import {
   authService,
   type LoginPayload,
   type RegisterPayload,
+  type UpdateProfilePayload,
   type User,
 } from "@/services/auth"
 
@@ -35,11 +36,19 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
+  async function updateProfile(payload: UpdateProfilePayload) {
+    user.value = await authService.updateProfile(payload)
+  }
+
+  async function uploadAvatar(file: File) {
+    user.value = await authService.uploadAvatar(file)
+  }
+
   function logout() {
     user.value = null
     token.value = null
     localStorage.removeItem("token")
   }
 
-  return { user, token, isAuthenticated, login, register, fetchUser, logout }
+  return { user, token, isAuthenticated, login, register, fetchUser, updateProfile, uploadAvatar, logout }
 })
