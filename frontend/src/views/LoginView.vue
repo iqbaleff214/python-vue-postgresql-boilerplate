@@ -121,6 +121,16 @@ async function handleLogin() {
         </button>
       </div>
 
+      <!-- Forgot Password Link -->
+      <div class="flex justify-end">
+        <router-link
+          to="/forgot-password"
+          class="text-sm font-medium text-violet-600 hover:underline dark:text-violet-400"
+        >
+          Forgot password?
+        </router-link>
+      </div>
+
       <!-- Submit -->
       <button
         type="submit"

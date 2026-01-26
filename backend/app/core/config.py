@@ -11,6 +11,20 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     upload_dir: str = "uploads"
 
+    # Redis
+    redis_url: str = "redis://localhost:6379/0"
+
+    # SMTP
+    smtp_server: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+    smtp_from_name: str = "Python Vue Boilerplate"
+
+    # Reset Password
+    reset_password_expire_minutes: int = 30
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

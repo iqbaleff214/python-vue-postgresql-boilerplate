@@ -37,6 +37,15 @@ export interface ChangePasswordPayload {
   new_password: string
 }
 
+export interface ForgotPasswordPayload {
+  email: string
+}
+
+export interface ResetPasswordPayload {
+  token: string
+  new_password: string
+}
+
 interface TokenResponse {
   access_token: string
   token_type: string
@@ -78,5 +87,15 @@ export const authService = {
 
   async logout(): Promise<void> {
     await api.post("/auth/logout")
+  },
+
+  async forgotPassword(payload: ForgotPasswordPayload): Promise<{ message: string }> {
+    const { data } = await api.post<{ message: string }>("/auth/forgot-password", payload)
+    return data
+  },
+
+  async resetPassword(payload: ResetPasswordPayload): Promise<{ message: string }> {
+    const { data } = await api.post<{ message: string }>("/auth/reset-password", payload)
+    return data
   },
 }
