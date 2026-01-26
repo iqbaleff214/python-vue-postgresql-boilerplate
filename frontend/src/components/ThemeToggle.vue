@@ -93,7 +93,7 @@ function handleBlur() {
           class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
           :class="
             theme.mode === opt.value
-              ? 'text-blue-600 dark:text-blue-400'
+              ? 'text-violet-600 dark:text-violet-400'
               : 'text-gray-700 dark:text-gray-300'
           "
           @click="select(opt.value)"

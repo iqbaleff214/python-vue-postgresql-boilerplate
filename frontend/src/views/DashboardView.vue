@@ -86,7 +86,7 @@ const auth = useAuthStore()
           </h3>
           <div class="flex items-center gap-3">
             <div
-              class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-medium text-white"
+              class="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-sm font-medium text-white"
             >
               {{ auth.user?.name.charAt(0).toUpperCase() }}
             </div>
@@ -118,7 +118,7 @@ const auth = useAuthStore()
             >
               Notifications
             </h3>
-            <span class="text-xs text-blue-600 dark:text-blue-400">
+            <span class="text-xs text-violet-600 dark:text-violet-400">
               Mark all read
             </span>
           </div>

@@ -30,7 +30,7 @@ function handleUserMenuBlur() {
           <!-- Brand -->
           <div class="flex shrink-0 items-center gap-2">
             <div
-              class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white"
+              class="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600 text-sm font-bold text-white"
             >
               PV
             </div>
@@ -60,7 +60,7 @@ function handleUserMenuBlur() {
               <input
                 type="text"
                 placeholder="Search..."
-                class="w-full rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                class="w-full rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
               />
             </div>
           </div>
@@ -112,7 +112,7 @@ function handleUserMenuBlur() {
                 @blur="handleUserMenuBlur"
               >
                 <div
-                  class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-medium text-white"
+                  class="flex h-8 w-8 items-center justify-center rounded-full bg-violet-600 text-sm font-medium text-white"
                 >
                   {{ auth.user.name.charAt(0).toUpperCase() }}
                 </div>
