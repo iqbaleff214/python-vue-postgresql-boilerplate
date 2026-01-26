@@ -75,6 +75,14 @@ function handleUserMenuBlur() {
             >
               Dashboard
             </router-link>
+            <router-link
+              v-if="auth.user?.role === 'ADMIN'"
+              to="/a/accounts"
+              class="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+              active-class="!bg-gray-100 !text-gray-900 dark:!bg-gray-800 dark:!text-white"
+            >
+              Accounts
+            </router-link>
             <slot name="nav-links" />
           </div>
 
@@ -222,6 +230,14 @@ function handleUserMenuBlur() {
             @click="mobileMenuOpen = false"
           >
             Dashboard
+          </router-link>
+          <router-link
+            v-if="auth.user?.role === 'ADMIN'"
+            to="/a/accounts"
+            class="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+            @click="mobileMenuOpen = false"
+          >
+            Accounts
           </router-link>
           <slot name="mobile-nav-links" />
         </div>

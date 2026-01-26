@@ -38,6 +38,12 @@ const routes = [
     component: () => import("@/views/ProfileView.vue"),
     meta: { requiresAuth: true },
   },
+  {
+    path: "/a/accounts",
+    name: "accounts",
+    component: () => import("@/views/admin/AccountsView.vue"),
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
 ]
 
 const router = createRouter({
@@ -54,6 +60,10 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return { name: "login" }
+  }
+
+  if (to.meta.requiresAdmin && auth.user?.role !== "ADMIN") {
+    return { name: "dashboard" }
   }
 
   if (to.meta.guest && auth.isAuthenticated) {
