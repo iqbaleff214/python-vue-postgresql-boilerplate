@@ -44,6 +44,16 @@ const routes = [
     component: () => import("@/views/admin/AccountsView.vue"),
     meta: { requiresAuth: true, requiresAdmin: true },
   },
+  {
+    path: "/error",
+    name: "error",
+    component: () => import("@/views/ErrorView.vue"),
+  },
+  {
+    path: "/:pathMatch(.*)*",
+    name: "not-found",
+    component: () => import("@/views/ErrorView.vue"),
+  },
 ]
 
 const router = createRouter({
