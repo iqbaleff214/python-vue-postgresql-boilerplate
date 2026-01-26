@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue"
 import AppLayout from "@/components/AppLayout.vue"
+import UserAvatar from "@/components/UserAvatar.vue"
 import { useAuthStore } from "@/stores/auth"
 import { authService } from "@/services/auth"
 
@@ -33,13 +34,6 @@ onMounted(() => {
     phoneNumber.value = auth.user.phone_number
   }
 })
-
-function resolveAvatarUrl(url: string | null | undefined): string | null {
-  if (!url) return null
-  if (url.startsWith("http")) return url
-  const base = import.meta.env.VITE_APP_API_URL?.replace(/\/api\/?$/, "") || ""
-  return `${base}${url}`
-}
 
 async function handleSave() {
   error.value = ""
@@ -162,22 +156,11 @@ async function handleChangePassword() {
         </h2>
         <div class="flex items-center gap-5">
           <div class="relative">
-            <div
-              v-if="avatarPreview || resolveAvatarUrl(auth.user?.avatar_url)"
-              class="h-20 w-20 overflow-hidden rounded-full"
-            >
-              <img
-                :src="(avatarPreview || resolveAvatarUrl(auth.user?.avatar_url)) as string"
-                alt="Avatar"
-                class="h-full w-full object-cover"
-              />
-            </div>
-            <div
-              v-else
-              class="flex h-20 w-20 items-center justify-center rounded-full bg-violet-600 text-2xl font-semibold text-white"
-            >
-              {{ auth.user?.name.charAt(0).toUpperCase() }}
-            </div>
+            <UserAvatar
+              :name="auth.user?.name ?? ''"
+              :avatar-url="avatarPreview || auth.user?.avatar_url"
+              size="lg"
+            />
             <div
               v-if="avatarUploading"
               class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40"

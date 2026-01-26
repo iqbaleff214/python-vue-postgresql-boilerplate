@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppLayout from "@/components/AppLayout.vue"
+import UserAvatar from "@/components/UserAvatar.vue"
 import { useAuthStore } from "@/stores/auth"
 
 const auth = useAuthStore()
@@ -85,11 +86,7 @@ const auth = useAuthStore()
             Profile
           </h3>
           <div class="flex items-center gap-3">
-            <div
-              class="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-sm font-medium text-white"
-            >
-              {{ auth.user?.name.charAt(0).toUpperCase() }}
-            </div>
+            <UserAvatar :name="auth.user?.name ?? ''" :avatar-url="auth.user?.avatar_url" size="md" />
             <div class="min-w-0">
               <p
                 class="truncate text-sm font-medium text-gray-900 dark:text-white"

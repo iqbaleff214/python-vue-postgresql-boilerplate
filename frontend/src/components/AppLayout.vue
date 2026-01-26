@@ -3,6 +3,7 @@ import { ref } from "vue"
 import { useRouter } from "vue-router"
 import { useAuthStore } from "@/stores/auth"
 import ThemeToggle from "@/components/ThemeToggle.vue"
+import UserAvatar from "@/components/UserAvatar.vue"
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -111,11 +112,7 @@ function handleUserMenuBlur() {
                 @click="userMenuOpen = !userMenuOpen"
                 @blur="handleUserMenuBlur"
               >
-                <div
-                  class="flex h-8 w-8 items-center justify-center rounded-full bg-violet-600 text-sm font-medium text-white"
-                >
-                  {{ auth.user.name.charAt(0).toUpperCase() }}
-                </div>
+                <UserAvatar :name="auth.user.name" :avatar-url="auth.user.avatar_url" size="sm" />
               </button>
 
               <Transition
