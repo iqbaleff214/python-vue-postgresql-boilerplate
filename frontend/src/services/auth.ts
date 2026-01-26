@@ -1,0 +1,53 @@
+import api from "./api"
+
+export interface User {
+  id: string
+  name: string
+  surname: string | null
+  email: string
+  phone_number: string
+  avatar_url: string | null
+  role: string
+  extra_data: Record<string, unknown> | null
+  created_at: string
+  updated_at: string
+}
+
+export interface LoginPayload {
+  identifier: string
+  password: string
+}
+
+export interface RegisterPayload {
+  name: string
+  surname?: string
+  email: string
+  phone_number: string
+  password: string
+}
+
+interface TokenResponse {
+  access_token: string
+  token_type: string
+}
+
+export const authService = {
+  async login(payload: LoginPayload): Promise<TokenResponse> {
+    const { data } = await api.post<TokenResponse>("/auth/login", payload)
+    return data
+  },
+
+  async register(payload: RegisterPayload): Promise<TokenResponse> {
+    const { data } = await api.post<TokenResponse>("/auth/register", payload)
+    return data
+  },
+
+  async getMe(): Promise<User> {
+    const { data } = await api.get<User>("/users/me")
+    return data
+  },
+
+  async logout(): Promise<void> {
+    await api.post("/auth/logout")
+  },
+}

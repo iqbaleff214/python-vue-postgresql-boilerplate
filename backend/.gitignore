@@ -34,7 +34,7 @@ media/
 static/uploads/
 
 # AI model files
-models/
+# models/
 *.pkl
 *.h5
 *.pb
