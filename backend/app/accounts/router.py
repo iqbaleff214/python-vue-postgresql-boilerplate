@@ -5,9 +5,11 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.accounts.schemas import AccountCreateRequest, AccountResponse
+from app.core.config import settings
 from app.core.dependencies import get_admin_user, get_db
 from app.core.security import hash_password
 from app.models.user import User
+from app.tasks.email import send_new_account_email
 
 router = APIRouter()
 
@@ -62,6 +64,12 @@ async def create_account(
     db.add(user)
     await db.commit()
     await db.refresh(user)
+
+    login_url = f"{settings.frontend_url}/login"
+    send_new_account_email.delay(
+        payload.email, payload.name, payload.password, payload.role, login_url
+    )
+
     return user
 
 
