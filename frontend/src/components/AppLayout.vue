@@ -1,16 +1,21 @@
 <script setup lang="ts">
-import { ref } from "vue"
+import { ref, computed, watch, onUnmounted } from "vue"
 import { useRouter } from "vue-router"
 import { useAuthStore } from "@/stores/auth"
+import { useNotificationStore } from "@/stores/notifications"
 import ThemeToggle from "@/components/ThemeToggle.vue"
 import UserAvatar from "@/components/UserAvatar.vue"
 
 const router = useRouter()
 const auth = useAuthStore()
+const notificationStore = useNotificationStore()
+
 const userMenuOpen = ref(false)
 const mobileMenuOpen = ref(false)
+const notificationsOpen = ref(false)
 
 function handleLogout() {
+  notificationStore.reset()
   auth.logout()
   router.push({ name: "login" })
 }
@@ -18,6 +23,76 @@ function handleLogout() {
 function handleUserMenuBlur() {
   setTimeout(() => (userMenuOpen.value = false), 150)
 }
+
+function handleNotificationsBlur() {
+  setTimeout(() => (notificationsOpen.value = false), 150)
+}
+
+function handleNotificationClick(notification: (typeof notificationStore.notifications)[0]) {
+  if (!notification.is_read) {
+    notificationStore.markAsRead([notification.id])
+  }
+  if (notification.link) {
+    router.push(notification.link)
+    notificationsOpen.value = false
+  }
+}
+
+function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString)
+  const now = new Date()
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+  if (seconds < 60) return "Just now"
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`
+  return date.toLocaleDateString()
+}
+
+function getNotificationIcon(type: string): string {
+  switch (type) {
+    case "success":
+      return "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+    case "warning":
+      return "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+    case "error":
+      return "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+    default:
+      return "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+  }
+}
+
+function getNotificationColor(type: string): string {
+  switch (type) {
+    case "success":
+      return "text-green-500"
+    case "warning":
+      return "text-yellow-500"
+    case "error":
+      return "text-red-500"
+    default:
+      return "text-blue-500"
+  }
+}
+
+// Connect/disconnect WebSocket based on auth state
+watch(
+  () => auth.isAuthenticated,
+  (isAuthenticated) => {
+    if (isAuthenticated) {
+      notificationStore.connectWebSocket()
+      notificationStore.fetchNotifications({ limit: 10 })
+    } else {
+      notificationStore.reset()
+    }
+  },
+  { immediate: true }
+)
+
+onUnmounted(() => {
+  notificationStore.disconnectWebSocket()
+})
 </script>
 
 <template>
@@ -95,23 +170,166 @@ function handleUserMenuBlur() {
             <ThemeToggle />
 
             <!-- Notifications Bell -->
-            <button
-              class="relative rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
-            >
-              <svg
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="2"
+            <div class="relative">
+              <button
+                class="relative rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                @click="notificationsOpen = !notificationsOpen"
+                @blur="handleNotificationsBlur"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                <svg
+                  class="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                  />
+                </svg>
+                <!-- Unread badge -->
+                <span
+                  v-if="notificationStore.hasUnread"
+                  class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-medium text-white"
+                >
+                  {{ notificationStore.displayCount }}
+                </span>
+                <!-- Connected indicator -->
+                <span
+                  v-if="notificationStore.isConnected"
+                  class="absolute bottom-1 right-1 h-2 w-2 rounded-full bg-green-400"
                 />
-              </svg>
-            </button>
+              </button>
+
+              <!-- Notifications Dropdown -->
+              <Transition
+                enter-active-class="transition ease-out duration-100"
+                enter-from-class="transform opacity-0 scale-95"
+                enter-to-class="transform opacity-100 scale-100"
+                leave-active-class="transition ease-in duration-75"
+                leave-from-class="transform opacity-100 scale-100"
+                leave-to-class="transform opacity-0 scale-95"
+              >
+                <div
+                  v-if="notificationsOpen"
+                  class="absolute right-0 z-50 mt-2 w-80 origin-top-right rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                >
+                  <!-- Header -->
+                  <div
+                    class="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-700"
+                  >
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Notifications</h3>
+                    <button
+                      v-if="notificationStore.hasUnread"
+                      class="text-xs text-violet-600 hover:text-violet-700 dark:text-violet-400"
+                      @click="notificationStore.markAllAsRead()"
+                    >
+                      Mark all as read
+                    </button>
+                  </div>
+
+                  <!-- Notification List -->
+                  <div class="max-h-96 overflow-y-auto">
+                    <div
+                      v-if="notificationStore.isLoading"
+                      class="flex items-center justify-center py-8"
+                    >
+                      <svg
+                        class="h-6 w-6 animate-spin text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          class="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          stroke-width="4"
+                        />
+                        <path
+                          class="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                    </div>
+
+                    <div
+                      v-else-if="notificationStore.notifications.length === 0"
+                      class="py-8 text-center text-sm text-gray-500 dark:text-gray-400"
+                    >
+                      No notifications yet
+                    </div>
+
+                    <button
+                      v-else
+                      v-for="notification in notificationStore.notifications"
+                      :key="notification.id"
+                      class="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                      :class="{ 'bg-violet-50/50 dark:bg-violet-900/10': !notification.is_read }"
+                      @click="handleNotificationClick(notification)"
+                    >
+                      <!-- Icon -->
+                      <svg
+                        class="mt-0.5 h-5 w-5 flex-shrink-0"
+                        :class="getNotificationColor(notification.type)"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          :d="getNotificationIcon(notification.type)"
+                        />
+                      </svg>
+
+                      <!-- Content -->
+                      <div class="min-w-0 flex-1">
+                        <p
+                          class="text-sm font-medium text-gray-900 dark:text-white"
+                          :class="{ 'font-semibold': !notification.is_read }"
+                        >
+                          {{ notification.title }}
+                        </p>
+                        <p
+                          v-if="notification.message"
+                          class="mt-0.5 line-clamp-2 text-xs text-gray-500 dark:text-gray-400"
+                        >
+                          {{ notification.message }}
+                        </p>
+                        <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                          {{ formatTimeAgo(notification.created_at) }}
+                        </p>
+                      </div>
+
+                      <!-- Unread dot -->
+                      <span
+                        v-if="!notification.is_read"
+                        class="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-violet-500"
+                      />
+                    </button>
+                  </div>
+
+                  <!-- Footer -->
+                  <div
+                    v-if="notificationStore.total > notificationStore.notifications.length"
+                    class="border-t border-gray-100 px-4 py-2 dark:border-gray-700"
+                  >
+                    <button
+                      class="block w-full text-center text-xs text-violet-600 hover:text-violet-700 dark:text-violet-400"
+                      @click="notificationStore.fetchNotifications({ limit: 50 })"
+                    >
+                      Load more notifications
+                    </button>
+                  </div>
+                </div>
+              </Transition>
+            </div>
 
             <!-- User Menu -->
             <div v-if="auth.user" class="relative">
