@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import Dict, Set
+from typing import Dict, Optional, Set
 from uuid import UUID
 
 from fastapi import WebSocket
@@ -15,7 +15,7 @@ class ConnectionManager:
     def __init__(self):
         # user_id -> set of WebSocket connections (supports multiple tabs/devices)
         self._connections: Dict[UUID, Set[WebSocket]] = {}
-        self._redis_task: asyncio.Task | None = None
+        self._redis_task: Optional[asyncio.Task] = None
 
     async def connect(self, websocket: WebSocket, user_id: UUID) -> None:
         """Accept and register a WebSocket connection."""
