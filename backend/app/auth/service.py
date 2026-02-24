@@ -1,6 +1,9 @@
 import re
 from typing import Optional
 
+import httpx
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token as google_id_token
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -61,6 +64,91 @@ async def register_user(db: AsyncSession, data: RegisterRequest) -> User:
 def create_user_token(user: User) -> TokenResponse:
     token = create_access_token(data={"sub": str(user.id)})
     return TokenResponse(access_token=token)
+
+
+async def _find_or_create_social_user(
+    db: AsyncSession,
+    *,
+    email: str,
+    name: str,
+    surname: Optional[str],
+    avatar_url: Optional[str],
+) -> User:
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    if user is None:
+        user = User(
+            name=name,
+            surname=surname,
+            email=email,
+            phone_number=None,
+            avatar_url=avatar_url,
+            password_hash="",
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+    return user
+
+
+async def google_auth_user(db: AsyncSession, credential: str) -> User:
+    try:
+        id_info = google_id_token.verify_oauth2_token(
+            credential,
+            google_requests.Request(),
+            settings.google_client_id,
+        )
+    except ValueError as e:
+        raise ValueError(f"Invalid Google token: {e}")
+
+    email = id_info.get("email")
+    if not email:
+        raise ValueError("Google account has no email address")
+
+    name = id_info.get("given_name") or id_info.get("name", "")
+    surname = id_info.get("family_name")
+    avatar_url = id_info.get("picture")
+
+    return await _find_or_create_social_user(
+        db, email=email, name=name, surname=surname, avatar_url=avatar_url
+    )
+
+
+async def facebook_auth_user(db: AsyncSession, access_token: str) -> User:
+    app_token = f"{settings.facebook_app_id}|{settings.facebook_app_secret}"
+    async with httpx.AsyncClient() as client:
+        debug_resp = await client.get(
+            "https://graph.facebook.com/debug_token",
+            params={"input_token": access_token, "access_token": app_token},
+        )
+        debug_resp.raise_for_status()
+        debug_data = debug_resp.json().get("data", {})
+        if not debug_data.get("is_valid"):
+            raise ValueError("Invalid Facebook access token")
+        if debug_data.get("app_id") != settings.facebook_app_id:
+            raise ValueError("Facebook token app ID mismatch")
+
+        profile_resp = await client.get(
+            "https://graph.facebook.com/me",
+            params={
+                "fields": "id,name,first_name,last_name,email,picture.type(large)",
+                "access_token": access_token,
+            },
+        )
+        profile_resp.raise_for_status()
+        profile = profile_resp.json()
+
+    email = profile.get("email")
+    if not email:
+        raise ValueError("Facebook account has no verified email address")
+
+    name = profile.get("first_name") or profile.get("name", "")
+    surname = profile.get("last_name")
+    avatar_url = profile.get("picture", {}).get("data", {}).get("url")
+
+    return await _find_or_create_social_user(
+        db, email=email, name=name, surname=surname, avatar_url=avatar_url
+    )
 
 
 async def forgot_password(db: AsyncSession, email: str) -> None:

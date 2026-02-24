@@ -10,7 +10,7 @@ class UserResponse(BaseModel):
     name: str
     surname: Optional[str]
     email: EmailStr
-    phone_number: str
+    phone_number: Optional[str]
     avatar_url: Optional[str]
     role: str
     extra_data: Optional[dict[str, Any]]

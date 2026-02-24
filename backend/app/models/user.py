@@ -19,8 +19,8 @@ class User(Base, TimestampMixin):
     email: Mapped[str] = mapped_column(
         String(255), unique=True, nullable=False, index=True
     )
-    phone_number: Mapped[str] = mapped_column(
-        String(50), unique=True, nullable=False, index=True
+    phone_number: Mapped[Optional[str]] = mapped_column(
+        String(50), unique=True, nullable=True, index=True
     )
     avatar_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     role: Mapped[str] = mapped_column(String(50), nullable=False, default="USER")

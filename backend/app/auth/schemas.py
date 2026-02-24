@@ -22,6 +22,14 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class GoogleAuthRequest(BaseModel):
+    credential: str
+
+
+class FacebookAuthRequest(BaseModel):
+    access_token: str
+
+
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 

@@ -5,12 +5,20 @@ export interface User {
   name: string
   surname: string | null
   email: string
-  phone_number: string
+  phone_number: string | null
   avatar_url: string | null
   role: string
   extra_data: Record<string, unknown> | null
   created_at: string
   updated_at: string
+}
+
+export interface GoogleAuthPayload {
+  credential: string
+}
+
+export interface FacebookAuthPayload {
+  access_token: string
 }
 
 export interface LoginPayload {
@@ -54,6 +62,16 @@ interface TokenResponse {
 export const authService = {
   async login(payload: LoginPayload): Promise<TokenResponse> {
     const { data } = await api.post<TokenResponse>("/auth/login", payload)
+    return data
+  },
+
+  async googleAuth(payload: GoogleAuthPayload): Promise<TokenResponse> {
+    const { data } = await api.post<TokenResponse>("/auth/google", payload)
+    return data
+  },
+
+  async facebookAuth(payload: FacebookAuthPayload): Promise<TokenResponse> {
+    const { data } = await api.post<TokenResponse>("/auth/facebook", payload)
     return data
   },
 

@@ -3,7 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import service
 from app.auth.schemas import (
+    FacebookAuthRequest,
     ForgotPasswordRequest,
+    GoogleAuthRequest,
     LoginRequest,
     RegisterRequest,
     ResetPasswordRequest,
@@ -30,6 +32,24 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
 async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
     try:
         user = await service.register_user(db, data)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return service.create_user_token(user)
+
+
+@router.post("/google", response_model=TokenResponse)
+async def google_login(data: GoogleAuthRequest, db: AsyncSession = Depends(get_db)):
+    try:
+        user = await service.google_auth_user(db, data.credential)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return service.create_user_token(user)
+
+
+@router.post("/facebook", response_model=TokenResponse)
+async def facebook_login(data: FacebookAuthRequest, db: AsyncSession = Depends(get_db)):
+    try:
+        user = await service.facebook_auth_user(db, data.access_token)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     return service.create_user_token(user)

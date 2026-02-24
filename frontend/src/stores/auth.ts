@@ -28,6 +28,20 @@ export const useAuthStore = defineStore("auth", () => {
     await fetchUser()
   }
 
+  async function loginWithGoogle(credential: string) {
+    const response = await authService.googleAuth({ credential })
+    token.value = response.access_token
+    localStorage.setItem("token", response.access_token)
+    await fetchUser()
+  }
+
+  async function loginWithFacebook(accessToken: string) {
+    const response = await authService.facebookAuth({ access_token: accessToken })
+    token.value = response.access_token
+    localStorage.setItem("token", response.access_token)
+    await fetchUser()
+  }
+
   async function fetchUser() {
     try {
       user.value = await authService.getMe()
@@ -50,5 +64,5 @@ export const useAuthStore = defineStore("auth", () => {
     localStorage.removeItem("token")
   }
 
-  return { user, token, isAuthenticated, login, register, fetchUser, updateProfile, uploadAvatar, logout }
+  return { user, token, isAuthenticated, login, register, loginWithGoogle, loginWithFacebook, fetchUser, updateProfile, uploadAvatar, logout }
 })

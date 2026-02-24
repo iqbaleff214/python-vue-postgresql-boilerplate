@@ -25,6 +25,14 @@ class Settings(BaseSettings):
     # Reset Password
     reset_password_expire_minutes: int = 30
 
+    # Google OAuth
+    google_client_id: str = ""
+    google_client_secret: str = ""
+
+    # Facebook OAuth
+    facebook_app_id: str = ""
+    facebook_app_secret: str = ""
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

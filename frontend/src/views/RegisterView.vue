@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { ref } from "vue"
+import { ref, onMounted } from "vue"
 import { useRouter } from "vue-router"
 import { useAuthStore } from "@/stores/auth"
 import AuthLayout from "@/components/AuthLayout.vue"
+
+declare const google: any
+declare const FB: any
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -34,6 +37,48 @@ async function handleRegister() {
     loading.value = false
   }
 }
+
+async function handleGoogleLogin() {
+  error.value = ""
+  google.accounts.id.initialize({
+    client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+    callback: async ({ credential }: { credential: string }) => {
+      loading.value = true
+      try {
+        await auth.loginWithGoogle(credential)
+        router.push({ name: "dashboard" })
+      } catch (err: any) {
+        error.value = err.response?.data?.detail || "Google login failed"
+      } finally {
+        loading.value = false
+      }
+    },
+  })
+  google.accounts.id.prompt()
+}
+
+async function handleFacebookLogin() {
+  error.value = ""
+  FB.login(async (res: any) => {
+    if (res.authResponse) {
+      loading.value = true
+      try {
+        await auth.loginWithFacebook(res.authResponse.accessToken)
+        router.push({ name: "dashboard" })
+      } catch (err: any) {
+        error.value = err.response?.data?.detail || "Facebook login failed"
+      } finally {
+        loading.value = false
+      }
+    }
+  }, { scope: "public_profile,email" })
+}
+
+onMounted(() => {
+  if (typeof FB !== "undefined") {
+    FB.init({ appId: import.meta.env.VITE_FACEBOOK_APP_ID, cookie: true, xfbml: false, version: "v22.0" })
+  }
+})
 </script>
 
 <template>
@@ -186,7 +231,9 @@ async function handleRegister() {
     <div class="mt-6 grid grid-cols-2 gap-3">
       <button
         type="button"
-        class="flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-300 dark:hover:bg-gray-800"
+        :disabled="loading"
+        class="flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-300 dark:hover:bg-gray-800"
+        @click="handleGoogleLogin"
       >
         <svg class="h-5 w-5" viewBox="0 0 24 24">
           <path
@@ -210,14 +257,14 @@ async function handleRegister() {
       </button>
       <button
         type="button"
-        class="flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-300 dark:hover:bg-gray-800"
+        :disabled="loading"
+        class="flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-300 dark:hover:bg-gray-800"
+        @click="handleFacebookLogin"
       >
-        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-          <path
-            d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.18 0-.36-.02-.53-.06-.01-.18-.04-.56-.04-.95 0-1.15.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.248-1.68.03.32.06.65.06 1.01zm4.565 17.71c-.41.96-1.52 2.78-3.16 2.78-.85 0-1.46-.56-2.326-.56-.9 0-1.58.58-2.39.58-1.55 0-3.28-2.58-3.28-5.64 0-3.22 2.24-4.93 3.83-4.93.96 0 1.72.63 2.32.63.56 0 1.44-.67 2.5-.67.69 0 2.31.26 3.1 2.02-2.43 1.41-2.03 4.89.36 5.79z"
-          />
+        <svg class="h-5 w-5" fill="#1877F2" viewBox="0 0 24 24">
+          <path d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.885v2.27h3.328l-.532 3.49H13.875V24C19.612 23.094 24 18.1 24 12.073z"/>
         </svg>
-        Apple
+        Facebook
       </button>
     </div>
   </AuthLayout>

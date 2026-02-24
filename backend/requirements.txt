@@ -1,4 +1,6 @@
 alembic==1.18.1
+google-auth==2.40.1
+httpx==0.28.1
 amqp==5.3.1
 annotated-doc==0.0.4
 annotated-types==0.7.0
