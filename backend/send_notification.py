@@ -7,6 +7,8 @@ Usage:
     python send_notification.py --all --type warning --title "System Maintenance"
 """
 
+from __future__ import annotations
+
 import argparse
 import asyncio
 import sys
