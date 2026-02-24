@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field
@@ -10,12 +8,12 @@ from pydantic import BaseModel, EmailStr, Field
 class UserResponse(BaseModel):
     id: UUID
     name: str
-    surname: str | None
+    surname: Optional[str]
     email: EmailStr
     phone_number: str
-    avatar_url: str | None
+    avatar_url: Optional[str]
     role: str
-    extra_data: dict[str, Any] | None
+    extra_data: Optional[dict[str, Any]]
     created_at: datetime
     updated_at: datetime
 
@@ -23,9 +21,9 @@ class UserResponse(BaseModel):
 
 
 class UserUpdateRequest(BaseModel):
-    name: str | None = Field(None, min_length=1, max_length=255)
-    surname: str | None = None
-    phone_number: str | None = Field(None, min_length=5, max_length=50)
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
+    surname: Optional[str] = None
+    phone_number: Optional[str] = Field(None, min_length=5, max_length=50)
 
 
 class ChangePasswordRequest(BaseModel):

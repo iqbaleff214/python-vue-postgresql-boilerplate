@@ -1,6 +1,5 @@
-from __future__ import annotations
-
 import re
+from typing import Optional
 
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,7 +23,7 @@ def is_email(identifier: str) -> bool:
 
 async def authenticate_user(
     db: AsyncSession, identifier: str, password: str
-) -> User | None:
+) -> Optional[User]:
     if is_email(identifier):
         stmt = select(User).where(User.email == identifier)
     else:

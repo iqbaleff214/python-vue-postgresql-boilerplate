@@ -1,4 +1,4 @@
-from __future__ import annotations
+from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -10,7 +10,7 @@ class LoginRequest(BaseModel):
 
 class RegisterRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
-    surname: str | None = None
+    surname: Optional[str] = None
     email: EmailStr
     phone_number: str = Field(..., min_length=5, max_length=50)
     password: str = Field(..., min_length=6)

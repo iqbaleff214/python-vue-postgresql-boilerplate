@@ -1,6 +1,5 @@
-from __future__ import annotations
-
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 import bcrypt
 from jose import JWTError, jwt
@@ -18,7 +17,7 @@ def verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(pw, hashed.encode("utf-8"))
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(minutes=settings.access_token_expire_minutes)
@@ -27,7 +26,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
 
 
-def decode_access_token(token: str) -> dict | None:
+def decode_access_token(token: str) -> Optional[dict]:
     try:
         payload = jwt.decode(
             token, settings.secret_key, algorithms=[settings.algorithm]
@@ -50,7 +49,7 @@ def create_reset_token(user_id: str) -> str:
     return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
 
 
-def decode_reset_token(token: str) -> str | None:
+def decode_reset_token(token: str) -> Optional[str]:
     """Decode a reset token. Returns user_id if valid, None otherwise."""
     try:
         payload = jwt.decode(

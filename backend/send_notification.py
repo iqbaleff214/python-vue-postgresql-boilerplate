@@ -7,11 +7,10 @@ Usage:
     python send_notification.py --all --type warning --title "System Maintenance"
 """
 
-from __future__ import annotations
-
 import argparse
 import asyncio
 import sys
+from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import select
@@ -24,12 +23,12 @@ from app.notifications.schemas import NotificationCreate, NotificationResponse
 from app.notifications.service import create_notification
 
 
-async def get_user_by_email(db, email: str) -> User | None:
+async def get_user_by_email(db, email: str) -> Optional[User]:
     result = await db.execute(select(User).where(User.email == email))
     return result.scalar_one_or_none()
 
 
-async def get_all_user_ids(db) -> list[UUID]:
+async def get_all_user_ids(db) -> List[UUID]:
     result = await db.execute(select(User.id))
     return [row[0] for row in result.fetchall()]
 
@@ -38,8 +37,8 @@ async def send_and_notify(
     user_id: UUID,
     notification_type: str,
     title: str,
-    message: str | None,
-    link: str | None,
+    message: Optional[str],
+    link: Optional[str],
 ) -> Notification:
     """Create notification in DB and broadcast via Redis pub/sub."""
     async with async_session() as db:
