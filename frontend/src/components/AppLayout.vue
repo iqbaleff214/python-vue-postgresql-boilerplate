@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from "vue"
+import { ref, watch, onMounted, onUnmounted } from "vue"
 import { useRouter } from "vue-router"
 import { useAuthStore } from "@/stores/auth"
 import { useNotificationStore } from "@/stores/notifications"
 import ThemeToggle from "@/components/ThemeToggle.vue"
 import UserAvatar from "@/components/UserAvatar.vue"
+import CommandPalette from "@/components/CommandPalette.vue"
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -13,6 +14,21 @@ const notificationStore = useNotificationStore()
 const userMenuOpen = ref(false)
 const mobileMenuOpen = ref(false)
 const notificationsOpen = ref(false)
+const commandPaletteOpen = ref(false)
+
+function openCommandPalette() {
+  commandPaletteOpen.value = true
+}
+
+function handleGlobalKeydown(e: KeyboardEvent) {
+  if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+    e.preventDefault()
+    commandPaletteOpen.value = true
+  }
+}
+
+onMounted(() => window.addEventListener("keydown", handleGlobalKeydown))
+onUnmounted(() => window.removeEventListener("keydown", handleGlobalKeydown))
 
 function handleLogout() {
   notificationStore.reset()
@@ -117,11 +133,14 @@ onUnmounted(() => {
             </span>
           </div>
 
-          <!-- Search Bar -->
+          <!-- Search Bar (Command Palette Trigger) -->
           <div class="hidden flex-1 md:block md:max-w-sm lg:max-w-md">
-            <div class="relative">
+            <button
+              class="flex w-full items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-3 pr-2 text-sm text-gray-400 transition-colors hover:border-violet-400 hover:bg-white dark:border-gray-700 dark:bg-gray-800 dark:text-gray-500 dark:hover:border-violet-500 dark:hover:bg-gray-800"
+              @click="openCommandPalette"
+            >
               <svg
-                class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+                class="h-4 w-4 shrink-0"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -133,12 +152,13 @@ onUnmounted(() => {
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-              <input
-                type="text"
-                placeholder="Search..."
-                class="w-full rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
-              />
-            </div>
+              <span class="flex-1 text-left">Search...</span>
+              <kbd
+                class="hidden rounded border border-gray-200 bg-white px-1.5 py-0.5 font-mono text-[10px] text-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400 sm:block"
+              >
+                ⌘K
+              </kbd>
+            </button>
           </div>
 
           <!-- Center Nav Links -->
@@ -166,6 +186,26 @@ onUnmounted(() => {
 
           <!-- Right Actions -->
           <div class="flex items-center gap-1">
+            <!-- Mobile Search Button -->
+            <button
+              class="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200 md:hidden"
+              @click="openCommandPalette"
+            >
+              <svg
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </button>
+
             <!-- Theme Toggle -->
             <ThemeToggle />
 
@@ -461,6 +501,9 @@ onUnmounted(() => {
         </div>
       </div>
     </nav>
+
+    <!-- Command Palette -->
+    <CommandPalette v-model:open="commandPaletteOpen" />
 
     <!-- Page Content -->
     <div class="mx-auto max-w-full px-4 py-6 sm:px-6 lg:px-8">
