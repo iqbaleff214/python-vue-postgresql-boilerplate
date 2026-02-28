@@ -11,6 +11,8 @@ const router = useRouter()
 const auth = useAuthStore()
 const notificationStore = useNotificationStore()
 
+const appName = import.meta.env.VITE_APP_NAME || "Python Vue Boilerplate";
+
 const userMenuOpen = ref(false)
 const mobileMenuOpen = ref(false)
 const notificationsOpen = ref(false)
@@ -124,19 +126,39 @@ onUnmounted(() => {
             <div
               class="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600 text-sm font-bold text-white"
             >
-              PV
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-python"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 9h-7a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h3" /><path d="M12 15h7a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-3" /><path d="M8 9v-4a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v5a2 2 0 0 1 -2 2h-4a2 2 0 0 0 -2 2v5a2 2 0 0 0 2 2h4a2 2 0 0 0 2 -2v-4" /><path d="M11 6l0 .01" /><path d="M13 18l0 .01" /></svg>
             </div>
             <span
               class="hidden text-base font-semibold text-gray-900 dark:text-white sm:block"
             >
-              Python Vue
+              {{ appName }}
             </span>
+          </div>
+
+          <!-- Center Nav Links -->
+          <div class="hidden flex-1 items-center justify-left gap-1 lg:flex">
+            <router-link
+              to="/"
+              class="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+              active-class="!bg-gray-100 !text-gray-900 dark:!bg-gray-800 dark:!text-white"
+            >
+              Dashboard
+            </router-link>
+            <router-link
+              v-if="auth.user?.role === 'ADMIN'"
+              to="/a/accounts"
+              class="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+              active-class="!bg-gray-100 !text-gray-900 dark:!bg-gray-800 dark:!text-white"
+            >
+              Accounts
+            </router-link>
+            <slot name="nav-links" />
           </div>
 
           <!-- Search Bar (Command Palette Trigger) -->
           <div class="hidden flex-1 md:block md:max-w-sm lg:max-w-md">
             <button
-              class="flex w-full items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-3 pr-2 text-sm text-gray-400 transition-colors hover:border-violet-400 hover:bg-white dark:border-gray-700 dark:bg-gray-800 dark:text-gray-500 dark:hover:border-violet-500 dark:hover:bg-gray-800"
+              class="flex w-full items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 py-1 pl-3 pr-2 text-sm text-gray-400 transition-colors hover:border-violet-400 hover:bg-white dark:border-gray-700 dark:bg-gray-800 dark:text-gray-500 dark:hover:border-violet-500 dark:hover:bg-gray-800"
               @click="openCommandPalette"
             >
               <svg
@@ -159,26 +181,6 @@ onUnmounted(() => {
                 ⌘K
               </kbd>
             </button>
-          </div>
-
-          <!-- Center Nav Links -->
-          <div class="hidden flex-1 items-center justify-center gap-1 lg:flex">
-            <router-link
-              to="/"
-              class="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
-              active-class="!bg-gray-100 !text-gray-900 dark:!bg-gray-800 dark:!text-white"
-            >
-              Dashboard
-            </router-link>
-            <router-link
-              v-if="auth.user?.role === 'ADMIN'"
-              to="/a/accounts"
-              class="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
-              active-class="!bg-gray-100 !text-gray-900 dark:!bg-gray-800 dark:!text-white"
-            >
-              Accounts
-            </router-link>
-            <slot name="nav-links" />
           </div>
 
           <!-- Spacer -->
