@@ -5,11 +5,18 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.service import verify_facebook_token, verify_google_token
 from app.core.config import settings
 from app.core.dependencies import get_current_user, get_db
 from app.core.security import hash_password, verify_password
 from app.models.user import User
-from app.users.schemas import ChangePasswordRequest, UserResponse, UserUpdateRequest
+from app.users.schemas import (
+    ChangePasswordRequest,
+    ConnectFacebookRequest,
+    ConnectGoogleRequest,
+    UserResponse,
+    UserUpdateRequest,
+)
 
 router = APIRouter()
 
@@ -103,3 +110,102 @@ async def change_password(
     current_user.password_hash = hash_password(data.new_password)
     await db.commit()
     return {"detail": "Password changed successfully"}
+
+
+@router.post("/me/connect/google", response_model=UserResponse)
+async def connect_google(
+    data: ConnectGoogleRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        id_info = verify_google_token(data.credential)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    google_id = id_info.get("sub")
+    if not google_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Google token missing user ID"
+        )
+
+    # Ensure this Google ID is not already linked to a different account
+    result = await db.execute(
+        select(User).where(User.extra_data["google_id"].as_string() == google_id)
+    )
+    existing = result.scalar_one_or_none()
+    if existing and existing.id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This Google account is already linked to another user.",
+        )
+
+    extra = dict(current_user.extra_data or {})
+    extra["google_id"] = google_id
+    current_user.extra_data = extra
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user
+
+
+@router.delete("/me/connect/google", response_model=UserResponse)
+async def disconnect_google(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    extra = dict(current_user.extra_data or {})
+    extra.pop("google_id", None)
+    current_user.extra_data = extra
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user
+
+
+@router.post("/me/connect/facebook", response_model=UserResponse)
+async def connect_facebook(
+    data: ConnectFacebookRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        profile = await verify_facebook_token(data.access_token)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    facebook_id = profile.get("id")
+    if not facebook_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Facebook token missing user ID"
+        )
+
+    # Ensure this Facebook ID is not already linked to a different account
+    result = await db.execute(
+        select(User).where(User.extra_data["facebook_id"].as_string() == facebook_id)
+    )
+    existing = result.scalar_one_or_none()
+    if existing and existing.id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This Facebook account is already linked to another user.",
+        )
+
+    extra = dict(current_user.extra_data or {})
+    extra["facebook_id"] = facebook_id
+    current_user.extra_data = extra
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user
+
+
+@router.delete("/me/connect/facebook", response_model=UserResponse)
+async def disconnect_facebook(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    extra = dict(current_user.extra_data or {})
+    extra.pop("facebook_id", None)
+    current_user.extra_data = extra
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user
+

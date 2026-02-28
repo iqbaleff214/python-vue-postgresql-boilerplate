@@ -29,3 +29,13 @@ class UserUpdateRequest(BaseModel):
 class ChangePasswordRequest(BaseModel):
     current_password: str = Field(..., min_length=1)
     new_password: str = Field(..., min_length=6)
+
+
+class ConnectGoogleRequest(BaseModel):
+    credential: str
+
+
+class ConnectFacebookRequest(BaseModel):
+    access_token: str
+
+    

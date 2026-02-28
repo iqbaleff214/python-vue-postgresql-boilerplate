@@ -66,6 +66,123 @@ def create_user_token(user: User) -> TokenResponse:
     return TokenResponse(access_token=token)
 
 
+def verify_google_token(credential: str) -> dict:
+    """Verify a Google ID token and return its payload.
+
+    Raises ValueError if the token is invalid or cannot be verified.
+    """
+    try:
+        id_info = google_id_token.verify_oauth2_token(
+            credential,
+            google_requests.Request(),
+            settings.google_client_id,
+        )
+    except ValueError as e:
+        raise ValueError(f"Invalid Google token: {e}")
+    return id_info
+
+
+async def verify_facebook_token(access_token: str) -> dict:
+    """Verify a Facebook access token and return the user's profile dict.
+
+    Raises ValueError if the token is invalid or the app ID does not match.
+    """
+    app_token = f"{settings.facebook_app_id}|{settings.facebook_app_secret}"
+    async with httpx.AsyncClient() as client:
+        debug_resp = await client.get(
+            "https://graph.facebook.com/debug_token",
+            params={"input_token": access_token, "access_token": app_token},
+        )
+        debug_resp.raise_for_status()
+        debug_data = debug_resp.json().get("data", {})
+        if not debug_data.get("is_valid"):
+            raise ValueError("Invalid Facebook access token")
+        if debug_data.get("app_id") != settings.facebook_app_id:
+            raise ValueError("Facebook token app ID mismatch")
+
+        profile_resp = await client.get(
+            "https://graph.facebook.com/me",
+            params={
+                "fields": "id,name,first_name,last_name,email,picture.type(large)",
+                "access_token": access_token,
+            },
+        )
+        profile_resp.raise_for_status()
+        return profile_resp.json()
+
+
+async def _find_social_user(
+    db: AsyncSession,
+    *,
+    social_field: str,
+    social_id: str,
+    email: str,
+) -> User:
+    """Find an existing user by social provider ID or email. Never creates accounts.
+
+    Lookup order:
+    1. Match by social_field stored in extra_data (fast path for already-linked accounts).
+    2. Fall back to email match — auto-links the social ID for future logins.
+    3. Raise ValueError if no matching account exists.
+    """
+    # 1. Try by social ID stored in extra_data
+    result = await db.execute(
+        select(User).where(User.extra_data[social_field].as_string() == social_id)
+    )
+    user = result.scalar_one_or_none()
+    if user is not None:
+        return user
+
+    # 2. Fall back to email match
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise ValueError(
+            "No account found for this social login. Contact your administrator."
+        )
+
+    # Auto-link: store the social ID so future logins skip the email lookup
+    extra = dict(user.extra_data or {})
+    extra[social_field] = social_id
+    user.extra_data = extra
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def _create_social_user(
+    db: AsyncSession,
+    *,
+    email: str,
+    name: str,
+    surname: Optional[str],
+    avatar_url: Optional[str],
+    google_id: Optional[str] = None,
+    facebook_id: Optional[str] = None,
+) -> User:
+    """Create a new user account for a social login.
+
+    The account is created with an unusable password and the social ID must be linked
+    separately after creation.
+    """
+    user = User(
+        name=name,
+        surname=surname,
+        email=email,
+        phone_number=None,
+        avatar_url=avatar_url,
+        password_hash="",
+        extra_data={
+            "facebook_id": facebook_id,
+            "google_id": google_id,
+        },
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
 async def _find_or_create_social_user(
     db: AsyncSession,
     *,
@@ -91,63 +208,67 @@ async def _find_or_create_social_user(
     return user
 
 
-async def google_auth_user(db: AsyncSession, credential: str) -> User:
-    try:
-        id_info = google_id_token.verify_oauth2_token(
-            credential,
-            google_requests.Request(),
-            settings.google_client_id,
-        )
-    except ValueError as e:
-        raise ValueError(f"Invalid Google token: {e}")
+async def google_auth_user(db: AsyncSession, credential: str, is_signup: bool = False) -> User:
+    id_info = verify_google_token(credential)
 
     email = id_info.get("email")
     if not email:
         raise ValueError("Google account has no email address")
 
-    name = id_info.get("given_name") or id_info.get("name", "")
-    surname = id_info.get("family_name")
-    avatar_url = id_info.get("picture")
-
+    google_id = id_info.get("sub")
+    if not google_id:
+        raise ValueError("Google token missing user ID")
+    
+    if not is_signup:
+        return await _find_social_user(
+            db, social_field="google_id", social_id=google_id, email=email
+        )
+    
+    # Ensure this Google ID is not already linked to a different account
+    result = await db.execute(select(User).where(User.extra_data["google_id"].as_string() == google_id))
+    existing: Optional[User] = result.scalar_one_or_none()
+    if existing:
+        raise ValueError("This Google account is already linked to another user.")
+    
     return await _find_or_create_social_user(
-        db, email=email, name=name, surname=surname, avatar_url=avatar_url
+        db,
+        email=email,
+        name=id_info.get("given_name") or id_info.get("name", "Unknown"),
+        surname=id_info.get("family_name"),
+        avatar_url=id_info.get("picture"),
+        google_id=google_id,
     )
 
 
-async def facebook_auth_user(db: AsyncSession, access_token: str) -> User:
-    app_token = f"{settings.facebook_app_id}|{settings.facebook_app_secret}"
-    async with httpx.AsyncClient() as client:
-        debug_resp = await client.get(
-            "https://graph.facebook.com/debug_token",
-            params={"input_token": access_token, "access_token": app_token},
-        )
-        debug_resp.raise_for_status()
-        debug_data = debug_resp.json().get("data", {})
-        if not debug_data.get("is_valid"):
-            raise ValueError("Invalid Facebook access token")
-        if debug_data.get("app_id") != settings.facebook_app_id:
-            raise ValueError("Facebook token app ID mismatch")
-
-        profile_resp = await client.get(
-            "https://graph.facebook.com/me",
-            params={
-                "fields": "id,name,first_name,last_name,email,picture.type(large)",
-                "access_token": access_token,
-            },
-        )
-        profile_resp.raise_for_status()
-        profile = profile_resp.json()
+async def facebook_auth_user(db: AsyncSession, access_token: str, is_signup: bool = False) -> User:
+    profile = await verify_facebook_token(access_token)
 
     email = profile.get("email")
     if not email:
         raise ValueError("Facebook account has no verified email address")
 
-    name = profile.get("first_name") or profile.get("name", "")
-    surname = profile.get("last_name")
-    avatar_url = profile.get("picture", {}).get("data", {}).get("url")
+    facebook_id = profile.get("id")
+    if not facebook_id:
+        raise ValueError("Facebook token missing user ID")
 
-    return await _find_or_create_social_user(
-        db, email=email, name=name, surname=surname, avatar_url=avatar_url
+    if not is_signup:
+        return await _find_social_user(
+            db, social_field="facebook_id", social_id=facebook_id, email=email
+        )
+    
+    # Ensure this Facebook ID is not already linked to a different account
+    result = await db.execute(select(User).where(User.extra_data["facebook_id"].as_string() == facebook_id))
+    existing: Optional[User] = result.scalar_one_or_none()
+    if existing:
+        raise ValueError("This Facebook account is already linked to another user.")
+    
+    return await _create_social_user(
+        db,
+        email=email,
+        name=profile.get("first_name") or profile.get("name", "Unknown"),
+        surname=profile.get("last_name", None),
+        avatar_url=profile.get("picture", {}).get("data", {}).get("url") or profile.get("picture"),
+        facebook_id=facebook_id,
     )
 
 

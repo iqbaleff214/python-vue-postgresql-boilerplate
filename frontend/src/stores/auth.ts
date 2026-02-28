@@ -2,6 +2,8 @@ import { computed, ref } from "vue"
 import { defineStore } from "pinia"
 import {
   authService,
+  type ConnectFacebookPayload,
+  type ConnectGooglePayload,
   type LoginPayload,
   type RegisterPayload,
   type UpdateProfilePayload,
@@ -29,14 +31,28 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   async function loginWithGoogle(credential: string) {
-    const response = await authService.googleAuth({ credential })
+    const response = await authService.googleAuth({ credential, is_signup: false })
+    token.value = response.access_token
+    localStorage.setItem("token", response.access_token)
+    await fetchUser()
+  }
+
+  async function signupWithGoogle(credential: string) {
+    const response = await authService.googleAuth({ credential, is_signup: true })
     token.value = response.access_token
     localStorage.setItem("token", response.access_token)
     await fetchUser()
   }
 
   async function loginWithFacebook(accessToken: string) {
-    const response = await authService.facebookAuth({ access_token: accessToken })
+    const response = await authService.facebookAuth({ access_token: accessToken, is_signup: false })
+    token.value = response.access_token
+    localStorage.setItem("token", response.access_token)
+    await fetchUser()
+  }
+
+  async function signupWithFacebook(accessToken: string) {
+    const response = await authService.facebookAuth({ access_token: accessToken, is_signup: true })
     token.value = response.access_token
     localStorage.setItem("token", response.access_token)
     await fetchUser()
@@ -58,11 +74,29 @@ export const useAuthStore = defineStore("auth", () => {
     user.value = await authService.uploadAvatar(file)
   }
 
+  async function connectGoogle(payload: ConnectGooglePayload) {
+    user.value = await authService.connectGoogle(payload)
+  }
+
+  async function disconnectGoogle() {
+    user.value = await authService.disconnectGoogle()
+  }
+
+  async function connectFacebook(payload: ConnectFacebookPayload) {
+    user.value = await authService.connectFacebook(payload)
+  }
+
+  async function disconnectFacebook() {
+    user.value = await authService.disconnectFacebook()
+  }
+
   function logout() {
     user.value = null
     token.value = null
     localStorage.removeItem("token")
   }
 
-  return { user, token, isAuthenticated, login, register, loginWithGoogle, loginWithFacebook, fetchUser, updateProfile, uploadAvatar, logout }
+  return { 
+    user, token, isAuthenticated, login, register, loginWithGoogle, loginWithFacebook, signupWithGoogle, signupWithFacebook, 
+    fetchUser, updateProfile, uploadAvatar, logout, connectGoogle, disconnectGoogle, connectFacebook, disconnectFacebook, }
 })

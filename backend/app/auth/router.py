@@ -40,7 +40,7 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
 @router.post("/google", response_model=TokenResponse)
 async def google_login(data: GoogleAuthRequest, db: AsyncSession = Depends(get_db)):
     try:
-        user = await service.google_auth_user(db, data.credential)
+        user = await service.google_auth_user(db, data.credential, data.is_signup)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     return service.create_user_token(user)
@@ -49,7 +49,7 @@ async def google_login(data: GoogleAuthRequest, db: AsyncSession = Depends(get_d
 @router.post("/facebook", response_model=TokenResponse)
 async def facebook_login(data: FacebookAuthRequest, db: AsyncSession = Depends(get_db)):
     try:
-        user = await service.facebook_auth_user(db, data.access_token)
+        user = await service.facebook_auth_user(db, data.access_token, data.is_signup)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     return service.create_user_token(user)

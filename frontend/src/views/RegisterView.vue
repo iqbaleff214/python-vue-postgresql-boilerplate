@@ -45,10 +45,10 @@ async function handleGoogleLogin() {
     callback: async ({ credential }: { credential: string }) => {
       loading.value = true
       try {
-        await auth.loginWithGoogle(credential)
+        await auth.signupWithGoogle(credential)
         router.push({ name: "dashboard" })
       } catch (err: any) {
-        error.value = err.response?.data?.detail || "Google login failed"
+        error.value = err.response?.data?.detail || "Google signup failed"
       } finally {
         loading.value = false
       }
@@ -63,10 +63,10 @@ async function handleFacebookLogin() {
     if (res.authResponse) {
       loading.value = true
       try {
-        await auth.loginWithFacebook(res.authResponse.accessToken)
+        await auth.signupWithFacebook(res.authResponse.accessToken)
         router.push({ name: "dashboard" })
       } catch (err: any) {
-        error.value = err.response?.data?.detail || "Facebook login failed"
+        error.value = err.response?.data?.detail || "Facebook signup failed"
       } finally {
         loading.value = false
       }

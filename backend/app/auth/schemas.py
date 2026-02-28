@@ -24,10 +24,12 @@ class TokenResponse(BaseModel):
 
 class GoogleAuthRequest(BaseModel):
     credential: str
+    is_signup: bool = False
 
 
 class FacebookAuthRequest(BaseModel):
     access_token: str
+    is_signup: bool = False
 
 
 class ForgotPasswordRequest(BaseModel):

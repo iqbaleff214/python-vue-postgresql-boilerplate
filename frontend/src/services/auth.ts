@@ -15,10 +15,12 @@ export interface User {
 
 export interface GoogleAuthPayload {
   credential: string
+  is_signup: boolean
 }
 
 export interface FacebookAuthPayload {
   access_token: string
+  is_signup: boolean
 }
 
 export interface LoginPayload {
@@ -52,6 +54,14 @@ export interface ForgotPasswordPayload {
 export interface ResetPasswordPayload {
   token: string
   new_password: string
+}
+
+export interface ConnectGooglePayload {
+  credential: string
+}
+
+export interface ConnectFacebookPayload {
+  access_token: string
 }
 
 interface TokenResponse {
@@ -114,6 +124,26 @@ export const authService = {
 
   async resetPassword(payload: ResetPasswordPayload): Promise<{ message: string }> {
     const { data } = await api.post<{ message: string }>("/auth/reset-password", payload)
+    return data
+  },
+  
+  async connectGoogle(payload: ConnectGooglePayload): Promise<User> {
+    const { data } = await api.post<User>("/users/me/connect/google", payload)
+    return data
+  },
+
+  async disconnectGoogle(): Promise<User> {
+    const { data } = await api.delete<User>("/users/me/connect/google")
+    return data
+  },
+
+  async connectFacebook(payload: ConnectFacebookPayload): Promise<User> {
+    const { data } = await api.post<User>("/users/me/connect/facebook", payload)
+    return data
+  },
+
+  async disconnectFacebook(): Promise<User> {
+    const { data } = await api.delete<User>("/users/me/connect/facebook")
     return data
   },
 }
