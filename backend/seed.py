@@ -12,7 +12,7 @@ from app.models.user import User
 ADMIN_USER = {
     "name": "Admin",
     "surname": "User",
-    "email": "admin@example.com",
+    "email": "iqbaleff214@gmail.com",
     "phone_number": "+628000000000",
     "role": "ADMIN",
     "password": "password",
